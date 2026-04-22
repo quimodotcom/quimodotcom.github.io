@@ -354,15 +354,45 @@
   <div class="corner bl"></div>
   <div class="corner br"></div>
 
-  <!-- ============================================================
-       MUSIC
-       Replace src with your audio file URL or remove the <audio> tag
-       ============================================================ -->
+  <!-- MUSIC -->
   <audio id="bgm" loop>
-    <source src="https://github.com/quimodotcom/quimodotcom.github.io/raw/refs/heads/main/assets/Choir-Sample-throw-my-money-everywhere-bnce.ogg" type="audio/ogg" />
+    <source src="https://raw.githubusercontent.com/quimodotcom/quimodotcom.github.io/main/assets/Choir-Sample-throw-my-money-everywhere-bnce.ogg" type="audio/ogg" />
   </audio>
-  <button id="music-btn" onclick="toggleMusic()">♪ Music: ON</button>
-
+  
+  <script>
+  const audio = document.getElementById("bgm");
+  let musicOn = false;
+  
+  // Try autoplay immediately (works in GMod's browser)
+  audio.volume = 0.4;
+  audio.play().then(() => {
+      musicOn = true;
+      document.getElementById("music-btn").textContent = "♪ Music: ON";
+  }).catch(() => {
+      // Fallback: regular browsers block autoplay, wait for click
+      document.getElementById("music-btn").textContent = "♪ Music: OFF";
+      document.addEventListener("click", function startMusic() {
+          if (!musicOn) {
+              audio.play().catch(() => {});
+              musicOn = true;
+              document.getElementById("music-btn").textContent = "♪ Music: ON";
+              document.removeEventListener("click", startMusic);
+          }
+      });
+  });
+  
+  function toggleMusic() {
+      if (musicOn) {
+          audio.pause();
+          musicOn = false;
+          document.getElementById("music-btn").textContent = "♪ Music: OFF";
+      } else {
+          audio.play().catch(() => {});
+          musicOn = true;
+          document.getElementById("music-btn").textContent = "♪ Music: ON";
+      }
+  }
+  </script>
   <!-- ============================================================
        MAIN SCREEN
        ============================================================ -->
