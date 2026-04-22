@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Server Loading Screen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================================
+       CONFIG — edit these CSS variables to match your server
+       ============================================================ */
+    :root {
+      --server-accent: #e8a020;       /* Main highlight color        */
+      --server-accent2: #c0392b;      /* Secondary / danger color    */
+      --bg-overlay: rgba(5, 8, 12, 0.82); /* Darkness of bg overlay */
+      --bar-color: #e8a020;           /* Progress bar fill           */
+    }
+
+    /* ============================================================
+       RESET & BASE
+       ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 100vw; height: 100vh;
+      overflow: hidden;
+      font-family: 'Rajdhani', sans-serif;
+      color: #d4cfc8;
+      background: #060a0f;
+    }
+
+    /* ============================================================
+       BACKGROUND
+       Edit src in the <img id="bg-img"> tag below to change image
+       ============================================================ */
+    #bg-img {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      z-index: 0;
+      filter: brightness(0.6) saturate(0.7);
+      animation: bgKen 30s ease-in-out infinite alternate;
+    }
+    @keyframes bgKen {
+      from { transform: scale(1); }
+      to   { transform: scale(1.06) translateX(-2%) translateY(-1%); }
+    }
+
+    #bg-overlay {
+      position: fixed; inset: 0;
+      background: var(--bg-overlay);
+      z-index: 1;
+    }
+
+    /* Scanline texture */
+    #bg-overlay::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.07) 2px,
+        rgba(0,0,0,0.07) 4px
+      );
+      pointer-events: none;
+    }
+
+    /* ============================================================
+       LAYOUT WRAPPER
+       ============================================================ */
+    #screen {
+      position: relative; z-index: 10;
+      width: 100%; height: 100%;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      padding: 40px 60px 36px;
+    }
+
+    /* ============================================================
+       TOP SECTION — logo + stats
+       ============================================================ */
+    #top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    /* --- Logo --- */
+    #logo-block {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      animation: fadeDown 0.8s ease both;
+    }
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-18px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    #logo-img {
+      width: 120px;
+      margin-bottom: 12px;
+      /* Replace src below with your logo URL */
+      filter: drop-shadow(0 0 12px rgba(232,160,32,0.5));
+    }
+
+    #server-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 52px;
+      letter-spacing: 4px;
+      line-height: 1;
+      color: #fff;
+      text-shadow: 0 0 30px rgba(232,160,32,0.4);
+    }
+    #server-tagline {
+      font-size: 13px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--server-accent);
+      margin-top: 6px;
+      font-weight: 600;
+    }
+    #server-ip {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      color: #7a8899;
+      margin-top: 8px;
+      letter-spacing: 1px;
+    }
+
+    /* --- Stats Panel --- */
+    #stats-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: flex-end;
+      animation: fadeDown 0.8s 0.15s ease both;
+    }
+
+    .stat-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(10,15,22,0.7);
+      border: 1px solid rgba(232,160,32,0.18);
+      border-right: 3px solid var(--server-accent);
+      padding: 8px 16px 8px 14px;
+      min-width: 220px;
+      position: relative;
+    }
+    .stat-row::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--server-accent);
+      opacity: 0.3;
+    }
+    .stat-icon {
+      font-size: 18px;
+      width: 22px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .stat-label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #6a7888;
+      font-weight: 600;
+      flex: 1;
+    }
+    .stat-value {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 15px;
+      color: #fff;
+      font-weight: 700;
+    }
+    .stat-value.accent { color: var(--server-accent); }
+
+    /* ============================================================
+       RULES / MOTD CENTER
+       ============================================================ */
+    #motd-block {
+      position: absolute;
+      bottom: 160px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 480px;
+      background: rgba(6,10,16,0.88);
+      border: 1px solid rgba(232,160,32,0.2);
+      border-top: 2px solid var(--server-accent);
+      padding: 20px 24px;
+      animation: fadeUp 0.9s 0.3s ease both;
+    }
+    #motd-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      letter-spacing: 3px;
+      color: var(--server-accent);
+      margin-bottom: 12px;
+    }
+    #motd-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    #motd-list li {
+      font-size: 13px;
+      color: #aab2bc;
+      padding-left: 14px;
+      position: relative;
+      line-height: 1.4;
+    }
+    #motd-list li::before {
+      content: '▸';
+      position: absolute; left: 0;
+      color: var(--server-accent);
+      font-size: 11px;
+    }
+
+    /* ============================================================
+       BOTTOM BAR — progress + loading status
+       ============================================================ */
+    #bottom {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      animation: fadeUp 0.8s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    #loading-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    #loading-status {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      color: var(--server-accent);
+      letter-spacing: 1px;
+    }
+    #loading-pct {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      color: #fff;
+    }
+
+    #progress-track {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.08);
+      position: relative;
+      overflow: hidden;
+    }
+    #progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--bar-color), #f5c842);
+      width: 0%;
+      transition: width 0.4s ease;
+      box-shadow: 0 0 10px var(--bar-color);
+      position: relative;
+    }
+    /* Animated shimmer on bar */
+    #progress-fill::after {
+      content: '';
+      position: absolute; top: 0; right: 0; bottom: 0;
+      width: 60px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+      animation: shimmer 1.2s infinite;
+    }
+    @keyframes shimmer {
+      from { transform: translateX(-60px); }
+      to   { transform: translateX(60px); }
+    }
+
+    #tip-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    #tip-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #3d4f60;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    #tip-text {
+      font-size: 12px;
+      color: #5a6e80;
+      font-style: italic;
+    }
+
+    /* ============================================================
+       MUSIC TOGGLE BUTTON
+       ============================================================ */
+    #music-btn {
+      position: fixed;
+      top: 20px; right: 24px;
+      z-index: 100;
+      background: rgba(10,15,22,0.85);
+      border: 1px solid rgba(232,160,32,0.3);
+      color: var(--server-accent);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 1px;
+      padding: 7px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+    #music-btn:hover {
+      background: rgba(232,160,32,0.12);
+      border-color: var(--server-accent);
+    }
+
+    /* corner decoration */
+    .corner {
+      position: fixed;
+      width: 40px; height: 40px;
+      z-index: 5;
+      opacity: 0.35;
+    }
+    .corner.tl { top: 18px; left: 18px; border-top: 2px solid var(--server-accent); border-left: 2px solid var(--server-accent); }
+    .corner.tr { top: 18px; right: 18px; border-top: 2px solid var(--server-accent); border-right: 2px solid var(--server-accent); }
+    .corner.bl { bottom: 18px; left: 18px; border-bottom: 2px solid var(--server-accent); border-left: 2px solid var(--server-accent); }
+    .corner.br { bottom: 18px; right: 18px; border-bottom: 2px solid var(--server-accent); border-right: 2px solid var(--server-accent); }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       BACKGROUND IMAGE
+       Replace the src with your own image URL
+       ============================================================ -->
+  <img id="bg-img"
+    src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1920&q=80"
+    alt="background" />
+
+  <div id="bg-overlay"></div>
+
+  <!-- Corner decorations -->
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
+
+  <!-- ============================================================
+       MUSIC
+       Replace src with your audio file URL or remove the <audio> tag
+       ============================================================ -->
+  <audio id="bgm" loop>
+    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3" type="audio/mpeg" />
+  </audio>
+  <button id="music-btn" onclick="toggleMusic()">♪ Music: ON</button>
+
+  <!-- ============================================================
+       MAIN SCREEN
+       ============================================================ -->
+  <div id="screen">
+    <div id="top">
+
+      <!-- LOGO + SERVER NAME
+           Replace #logo-img src with your logo URL
+           Edit server-name, tagline, and IP below -->
+      <div id="logo-block">
+        <img id="logo-img"
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Garry%27s_Mod_logo.svg/512px-Garry%27s_Mod_logo.svg.png"
+          alt="Server Logo" />
+        <div id="server-name">IRON BRIGADE</div>
+        <div id="server-tagline">Serious Military Roleplay</div>
+        <div id="server-ip">connect: 192.168.1.1:27015</div>
+      </div>
+
+      <!-- STATS PANEL
+           Values are updated by JavaScript below.
+           To hardcode them, replace id values or edit the JS config -->
+      <div id="stats-panel">
+        <div class="stat-row">
+          <span class="stat-icon">👥</span>
+          <span class="stat-label">Players Online</span>
+          <span class="stat-value accent" id="stat-players">—</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-icon">🗺️</span>
+          <span class="stat-label">Current Map</span>
+          <span class="stat-value" id="stat-map">—</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-icon">🎮</span>
+          <span class="stat-label">Gamemode</span>
+          <span class="stat-value" id="stat-gamemode">—</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-icon">📡</span>
+          <span class="stat-label">Ping</span>
+          <span class="stat-value" id="stat-ping">—</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-icon">⚙️</span>
+          <span class="stat-label">Server Status</span>
+          <span class="stat-value accent" id="stat-status">—</span>
+        </div>
+      </div>
+
+    </div><!-- /#top -->
+
+    <!-- ============================================================
+         RULES / MOTD
+         Edit the <li> items to your own rules
+         ============================================================ -->
+    <div id="motd-block">
+      <div id="motd-title">// SERVER RULES</div>
+      <ul id="motd-list">
+        <li>Respect all players and staff at all times.</li>
+        <li>No RDM (Random Deathmatch) — RP reasons required.</li>
+        <li>Stay in character while in-game. OOC in OOC chat only.</li>
+        <li>No prop spam, prop surfing, or prop abuse.</li>
+        <li>Listen to staff. Their decisions are final.</li>
+        <li>Report rule-breakers via !report — no vigilante justice.</li>
+      </ul>
+    </div>
+
+    <!-- BOTTOM PROGRESS BAR -->
+    <div id="bottom">
+      <div id="loading-meta">
+        <span id="loading-status">INITIALIZING...</span>
+        <span id="loading-pct">0%</span>
+      </div>
+      <div id="progress-track">
+        <div id="progress-fill"></div>
+      </div>
+      <div id="tip-row">
+        <span id="tip-label">TIP</span>
+        <span id="tip-text" id="tip-text"></span>
+      </div>
+    </div>
+
+  </div><!-- /#screen -->
+
+  <script>
+    /* ============================================================
+       SERVER CONFIG — edit these values
+       ============================================================ */
+    const SERVER = {
+      players:  "12 / 64",
+      map:      "rp_rockford_v2b",
+      gamemode: "MilitaryRP",
+      ping:     "32ms",
+      status:   "ONLINE",
+    };
+
+    const TIPS = [
+      "Use /advert for in-character announcements.",
+      "Type /job in chat to view your current assignment.",
+      "Salute superior officers with the G key.",
+      "Visit the Steam group for events and updates.",
+      "New? Check the !rules command in-game.",
+      "Join our Discord for community chat and support.",
+    ];
+
+    const LOADING_STAGES = [
+      "Connecting to server...",
+      "Downloading content...",
+      "Loading player models...",
+      "Loading map assets...",
+      "Initializing game mode...",
+      "Syncing server data...",
+      "Almost there...",
+      "Joining server...",
+    ];
+
+    /* ============================================================
+       POPULATE STATS
+       ============================================================ */
+    document.getElementById("stat-players").textContent  = SERVER.players;
+    document.getElementById("stat-map").textContent      = SERVER.map;
+    document.getElementById("stat-gamemode").textContent = SERVER.gamemode;
+    document.getElementById("stat-ping").textContent     = SERVER.ping;
+    document.getElementById("stat-status").textContent   = SERVER.status;
+
+    /* Random tip */
+    document.getElementById("tip-text").textContent =
+      TIPS[Math.floor(Math.random() * TIPS.length)];
+
+    /* ============================================================
+       PROGRESS BAR ANIMATION
+       In real GMod usage, replace with:
+         gameDetails.progress (0–1)  and  gameDetails.status
+       ============================================================ */
+    let pct = 0;
+    let stage = 0;
+    const fill   = document.getElementById("progress-fill");
+    const pctEl  = document.getElementById("loading-pct");
+    const statEl = document.getElementById("loading-status");
+
+    function updateStatus() {
+      const s = Math.floor((pct / 100) * LOADING_STAGES.length);
+      if (s !== stage && s < LOADING_STAGES.length) {
+        stage = s;
+        statEl.textContent = LOADING_STAGES[stage].toUpperCase();
+      }
+    }
+
+    const timer = setInterval(() => {
+      pct += Math.random() * 3.5 + 0.5;
+      if (pct >= 100) { pct = 100; clearInterval(timer); statEl.textContent = "READY — ENTERING SERVER"; }
+      fill.style.width = pct + "%";
+      pctEl.textContent = Math.floor(pct) + "%";
+      updateStatus();
+    }, 180);
+
+    /* ============================================================
+       MUSIC TOGGLE
+       ============================================================ */
+    const audio = document.getElementById("bgm");
+    let musicOn = false;
+
+    // Autoplay on first user interaction (browser policy)
+    document.addEventListener("click", function startMusic() {
+      if (!musicOn) {
+        audio.volume = 0.4;
+        audio.play().catch(() => {});
+        musicOn = true;
+        document.getElementById("music-btn").textContent = "♪ Music: ON";
+      }
+      document.removeEventListener("click", startMusic);
+    }, { once: false });
+
+    function toggleMusic() {
+      if (musicOn) {
+        audio.pause();
+        musicOn = false;
+        document.getElementById("music-btn").textContent = "♪ Music: OFF";
+      } else {
+        audio.play().catch(() => {});
+        musicOn = true;
+        document.getElementById("music-btn").textContent = "♪ Music: ON";
+      }
+    }
+
+    /* ============================================================
+       GMod INTEGRATION HOOKS
+       Uncomment below when deploying in actual Garry's Mod.
+       GMod exposes these globals from the loading screen HTML:
+         SetStatusChanged(status)  — called when status text changes
+         SetProgressChanged(pct)   — called with float 0.0–1.0
+         GameDetails(servName, serverURL, mapName, maxPlayers, steamID, gameMode)
+       ============================================================ */
+
+    /*
+    function GameDetails(servName, serverURL, mapName, maxPlayers, steamID, gameMode) {
+      document.getElementById("server-name").textContent    = servName;
+      document.getElementById("stat-map").textContent       = mapName;
+      document.getElementById("stat-gamemode").textContent  = gameMode;
+      document.getElementById("server-ip").textContent      = "connect: " + serverURL;
+    }
+
+    function SetStatusChanged(status) {
+      document.getElementById("loading-status").textContent = status.toUpperCase();
+    }
+
+    function SetProgressChanged(p) {
+      const pct = Math.floor(p * 100);
+      document.getElementById("progress-fill").style.width = pct + "%";
+      document.getElementById("loading-pct").textContent   = pct + "%";
+    }
+    */
+  </script>
+</body>
+</html>
