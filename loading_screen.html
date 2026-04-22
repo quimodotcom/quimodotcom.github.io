@@ -578,32 +578,61 @@
       }
     }
 
-    /* ============================================================
-       GMod INTEGRATION HOOKS
-       Uncomment below when deploying in actual Garry's Mod.
-       GMod exposes these globals from the loading screen HTML:
-         SetStatusChanged(status)  — called when status text changes
-         SetProgressChanged(pct)   — called with float 0.0–1.0
-         GameDetails(servName, serverURL, mapName, maxPlayers, steamID, gameMode)
-       ============================================================ */
+/* ============================================================
+   GMod INTEGRATION HOOKS
+   ============================================================ */
 
+// 1. This captures the server info (Map, Gamemode, etc.)
+function GameDetails(servername, serverurl, mapname, maxplayers, steamid, gamemode) {
+    document.getElementById("server-name").textContent = servername;
+    document.getElementById("stat-map").textContent = mapname;
+    document.getElementById("stat-gamemode").textContent = gamemode;
     
-    function GameDetails(servName, serverURL, mapName, maxPlayers, steamID, gameMode) {
-      document.getElementById("server-name").textContent    = servName;
-      document.getElementById("stat-map").textContent       = mapName;
-      document.getElementById("stat-gamemode").textContent  = gameMode;
-      document.getElementById("server-ip").textContent      = "connect: " + serverURL;
-    }
+    // Optional: Show the player's SteamID or Max Players
+    document.getElementById("stat-players").textContent = maxplayers + " Max Slots";
+}
 
-    function SetStatusChanged(status) {
-      document.getElementById("loading-status").textContent = status.toUpperCase();
-    }
+// 2. This captures the ACTUAL loading text (e.g., "Downloading models/player.mdl")
+function SetStatusChanged(status) {
+    document.getElementById("loading-status").textContent = status.toUpperCase();
+}
 
-    function SetProgressChanged(p) {
-      const pct = Math.floor(p * 100);
-      document.getElementById("progress-fill").style.width = pct + "%";
-      document.getElementById("loading-pct").textContent   = pct + "%";
-    }
+// 3. This captures the ACTUAL progress (0.0 to 1.0)
+function SetFilesNeeded(needed) {
+    // GMod uses FilesNeeded/FilesTotal to calculate progress usually
+}
+
+// GMod calls this automatically as the bar should fill
+function SetProgressChanged(p) {
+    const pct = Math.floor(p * 100);
+    document.getElementById("progress-fill").style.width = pct + "%";
+    document.getElementById("loading-pct").textContent = pct + "%";
+}
+
+/* ============================================================
+   RANDOM TIPS & MUSIC (Logic that stays)
+   ============================================================ */
+  const TIPS = [
+      "Use /admin to get free admin.",
+      "Don't die.",
+      "Look out for free airdrops.",
+      "Use /shop for cosmetics.",
+      "Consider donating @ https://quiqqys.tip4serv.com."
+  ];
+  
+  document.getElementById("tip-text").textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
+  
+  // Music Toggle Logic
+  const audio = document.getElementById("bgm");
+  let musicOn = false;
+  
+  document.addEventListener("click", function startMusic() {
+      if (!musicOn) {
+          audio.volume = 0.3;
+          audio.play().catch(() => {});
+          musicOn = true;
+      }
+  }, { once: true });
   </script>
 </body>
 </html>
